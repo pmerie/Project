@@ -5,7 +5,11 @@ ini_set('display_errors', 1);
 
 
 
-
+session_start();
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
 
 
 require 'db_connect.php';
@@ -13,12 +17,12 @@ require 'db_connect.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = $_POST['name'];
     $film_id = $_POST['film_id'];
-    $species = $_POST['species'];
+    $character_type = $_POST['character_type'];
     $description = $_POST['description'];
     $image_url = $_POST['image_url'];
 
-    $stmt = $db->prepare("INSERT INTO characters (name, film_id, species, description, image_url) VALUES (?, ?, ?, ?, ?)");
-    $stmt->execute([$name, $film_id, $species, $description, $image_url]);
+    $stmt = $db->prepare("INSERT INTO characters (name, film_id, character_type, description, image_url) VALUES (?, ?, ?, ?, ?)");
+    $stmt->execute([$name, $film_id, $character_type, $description, $image_url]);
      
     echo"<p>Character add successfully!</p>";
 }
@@ -42,9 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <label>Film ID:</label>
         <input type="number" name="film_id" required><br><br>
 
-        <!-- Specicies -->
-        <label>Species:</label>
-        <input type="text" name="species"><br><br>
+        <!-- Character Type -->
+        <label>Character Type:</label>
+        <input type="text" name="character_type"><br><br>
 
         <!-- Description -->
         <label>Description</label>

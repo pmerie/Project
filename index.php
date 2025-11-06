@@ -31,12 +31,6 @@ $characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
             margin-bottom: 10px;
             border-radius: 5px;
         }
-        .character-card h2 {
-            margin: 0 0 5px 0;
-        }
-        .character-card p {
-            margin: 5px 0;
-        }
     </style>
 </head>
 <body>
@@ -51,8 +45,8 @@ $characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <img src="<?= htmlspecialchars($char['image_url']) ?>" alt="<?= htmlspecialchars($char['name']) ?>">
                 <?php endif; ?>
                 <h2><?= htmlspecialchars($char['name']) ?></h2>
-                <p><strong>Species:</strong> <?= !empty($char['species']) ? htmlspecialchars($char['species']) : 'Unknown' ?></p>
-                <p><?= !empty($char['description']) ? htmlspecialchars(substr($char['description'], 0, 150)) . (strlen($char['description']) > 150 ? '...' : '') : 'No description available.' ?></p>
+                <p><strong>Character Type:</strong> <?= htmlspecialchars($char['character_type']) ?></p>
+                <p><?= htmlspecialchars($char['description']) ?></p>
                 <p><em>Film ID:</em> <?= htmlspecialchars($char['film_id']) ?></p>
             </div>
         <?php endforeach; ?>
