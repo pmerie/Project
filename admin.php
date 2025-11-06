@@ -1,15 +1,24 @@
 <?php
+// Temporarly debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+
+
+
+
+
 require 'db_connect.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = $_POST['name'];
-    $fim_id = $_POST['film_id'];
+    $film_id = $_POST['film_id'];
     $species = $_POST['species'];
     $description = $_POST['description'];
     $image_url = $_POST['image_url'];
 
     $stmt = $db->prepare("INSERT INTO characters (name, film_id, species, description, image_url) VALUES (?, ?, ?, ?, ?)");
-    $stmt->execute([$name, $film_id, $spcecies, $description, $image_url]);
+    $stmt->execute([$name, $film_id, $species, $description, $image_url]);
      
     echo"<p>Character add successfully!</p>";
 }
@@ -31,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- Film ID -->
         <label>Film ID:</label>
-        <input type="number" name="film_id" required><br><br>>
+        <input type="number" name="film_id" required><br><br>
 
         <!-- Specicies -->
         <label>Species:</label>
@@ -39,11 +48,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- Description -->
         <label>Description</label>
-        <textarea type="text" rows="5" cols="40"></textarea><br><br>
+        <textarea name="description" rows="5" cols="40"></textarea><br><br>
 
         <!-- Image URL -->
         <label>Image URL:</label>
-        <input type="text" name="image_url">><br><br>
+        <input type="text" name="image_url"><br><br>
 
         <button type="submit">Add Character</button>
     </form>
