@@ -35,6 +35,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Ghibli World Archive</title>
+    <link rel="stylesheet" href="style.css">
+
 </head>
 <body>
     <h1>Login</h1>

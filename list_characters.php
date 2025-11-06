@@ -1,17 +1,22 @@
-
 <?php
 require 'db_connect.php';
 
-$stmt = $db->query("SELECT * FROM characters ORDER BY created_at DESC");
+$stmt = $db->query("
+    SELECT characters.*, films.film_name 
+    FROM characters 
+    LEFT JOIN films ON characters.film_id = films.film_id
+    ORDER BY created_at DESC
+");
 $characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>List of Characters</title>
+    <link rel="stylesheet" href="style.css">
+
     <style>
         table { border-collapse: collapse; width: 100%; }
         th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
@@ -21,7 +26,7 @@ $characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </head>
 <body>
     <h1>Characters</h1>
-    <p><a href="admin.php">Add New Characters</a></p>
+    <p><a href="admin.php">Add New Character</a> | <a href="index.php">Home</a></p>
 
     <?php if (empty($characters)): ?>
         <p>No characters added yet.</p>
@@ -29,18 +34,18 @@ $characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <table> 
             <tr>
                 <th>Name</th>
-                <th>Film ID</th>
+                <th>Film</th>
                 <th>Character Type</th>
-                <th>Descriptions</th>
-                <th>Images</th>
+                <th>Description</th>
+                <th>Image</th>
                 <th>Actions</th>
             </tr>
             <?php foreach ($characters as $char): ?>
                 <tr>
                     <td><?= htmlspecialchars($char['name']) ?></td>
-                    <td><?= htmlspecialchars($char['film_id']) ?></td>
+                    <td><?= htmlspecialchars($char['film_name'] ?? 'Unknown') ?></td>
                     <td><?= htmlspecialchars($char['character_type']) ?></td>
-                    <td><?= htmlspecialchars(substr($char['description'], 0, 100)) ?><?= strlen($char['description']) > 100 ? '...' : '' ?></td>
+                    <td><?= htmlspecialchars(substr($char['description'],0,100)) ?><?= strlen($char['description'])>100?'...':'' ?></td>
                     <td>
                         <?php if (!empty($char['image_url'])): ?>
                             <img src="<?= htmlspecialchars($char['image_url']) ?>" alt="<?= htmlspecialchars($char['name']) ?>">
