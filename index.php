@@ -26,7 +26,11 @@ $characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </head>
 <body>
     <h1>Ghibli World Archive</h1>
-    <p><a href="list_characters.php">Manage Characters</a> | <a href="admin.php">Add New Character</a></p>
+    <p>
+        <a href="list_characters.php">Manage Characters</a> | 
+        <a href="admin.php">Add New Character</a> |
+        <a href="categories.php">Manage Categories</a>
+    </p>
 
     <?php if (empty($characters)): ?>
         <p>No characters added yet.</p>

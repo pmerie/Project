@@ -2,6 +2,10 @@
 require 'db_connect.php';
 session_start();
 
+//Fetch all categories for the dropdown
+$categoryStmt = $db->query("SELECT * FROM categories ORDER BY category_name");
+$categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
+
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
@@ -56,12 +60,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Update character
+    $category_id = $_POST['category_id'] ?? null;
     $stmt = $db->prepare("
-        UPDATE characters 
-        SET name = ?, film_id = ?, character_type = ?, description = ?, image_url = ? 
+        UPDATE characters
+        SET name = ?, film_id = ?, character_type = ?, description = ?, image_url = ?, category_id = ?
         WHERE character_id = ?
     ");
-    $stmt->execute([$name, $film_id, $character_type, $description, $image_url, $char_id]);
+    $stmt->execute([$name, $film_id, $character_type, $description, $image_url, $category_id, $char_id]);
 
     echo "<p>✅ Character updated successfully!</p>";
 
@@ -104,6 +109,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <label>Image URL:</label><br>
         <input type="text" name="image_url" value="<?= htmlspecialchars($char['image_url']) ?>"><br><br>
+
+            <!--Adding select for categories-->
+    <label>category:</label>
+    <select name="category_id">
+        <option value="">-- Select Category --</option>
+        <?php foreach ($categories as $cat): ?>
+            <option value="<?= $cat['category_id']?>">
+                <?= (isset($char['category_id']) && $char['category_id'] == $cat['category_id']) ? 'selected' : '' ?>
+                <?= htmlspecialchars($cat['category_name'])?>
+            </option>
+        <?php endforeach; ?>
+    </select><br><br>
 
         <button type="submit">Update Character</button>
     </form>

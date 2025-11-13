@@ -6,6 +6,9 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 require 'db_connect.php';
+//Fetch all categories for the dropdown
+$categoryStmt = $db->query("SELECT * FROM categories ORDER BY category_name");
+$categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $user_id = $_SESSION['user_id']; // Logged-in admin ID
 
@@ -38,8 +41,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Insert character
-        $stmt = $db->prepare("INSERT INTO characters (name, film_id, character_type, description, image_url) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$name, $film_id, $character_type, $description, $image_url]);
+        $category_id = $_POST['category_id'] ?? null;
+        $stmt = $db->prepare("
+            INSERT INTO characters (name, film_id, character_type, description, image_url, category_id) 
+            VALUES (?, ?, ?, ?, ?, ?)
+        ");
+        $stmt->execute([$name, $film_id, $character_type, $description, $image_url, $category_id]);
 
         echo "<p style='color:green;'>✅ Character added successfully!</p>";
     }
@@ -56,8 +63,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
 <h1>Admin - Add New Character</h1>
-<p><a href="list_characters.php">View All Characters</a> | <a href="index.php">Home</a></p>
-
+<p>
+    <a href="list_characters.php">View All Characters</a> |
+    <a href="categories.php">Manage Categories</a> |
+    <a href="index.php">Home</a> 
+ 
+</p>
 <form method="post">
     <label>Name:</label><br>
     <input type="text" name="name" required><br><br>
@@ -74,7 +85,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <label>Image URL:</label><br>
     <input type="text" name="image_url"><br><br>
 
+    <!--Adding select for categories-->
+    <label>category:</label>
+    <select name="category_id">
+        <option value="">-- Select Category --</option>
+        <?php foreach ($categories as $cat): ?>
+            <option value="<?= $cat['category_id']?>">
+                <?= (isset($_POST['category_id']) && $_POST['category_id'] == $cat['category_id']) ? 'selected' : '' ?>
+                <?= htmlspecialchars($cat['category_name'])?>
+            </option>
+        <?php endforeach; ?>
+    </select><br><br>
+
     <button type="submit">Add Character</button>
+
+
 </form>
 </body>
 </html>

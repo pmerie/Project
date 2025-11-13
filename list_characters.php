@@ -47,7 +47,11 @@ $characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </head>
 <body>
     <h1>Characters</h1>
-    <p><a href="admin.php">Add New Character</a> | <a href="index.php">Home</a></p>
+    <p>
+        <a href="admin.php">Add New Character</a> | 
+        <a href="index.php">Home</a> |
+        <a href="categories.php">Manage Categories</a>
+    </p>
 
     <!-- ✅ Show current sorting -->
     <p>Currently sorted by: <strong><?= htmlspecialchars(ucfirst(str_replace('_', ' ', $sort))) ?></strong> (<?= htmlspecialchars($order) ?>)</p>
