@@ -2,13 +2,13 @@
 session_start();
 require 'db_connect.php';
 
-// ✅ Restrict to logged-in users only
+// Restrict to logged-in users only
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
 }
 
-// ✅ Sorting setup
+//  Sorting setup
 $sort = $_GET['sort'] ?? 'name';
 $order = $_GET['order'] ?? 'ASC';
 
@@ -19,7 +19,7 @@ $allowedOrder = ['ASC', 'DESC'];
 if (!in_array($sort, $allowedSort)) $sort = 'name';
 if (!in_array($order, $allowedOrder)) $order = 'ASC';
 
-// ✅ Query with sorting
+// Query with sorting
 $stmt = $db->prepare("
     SELECT characters.*, films.film_name 
     FROM characters 
@@ -50,7 +50,9 @@ $characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <p>
         <a href="admin.php">Add New Character</a> | 
         <a href="index.php">Home</a> |
-        <a href="categories.php">Manage Categories</a>
+        <a href="categories.php">Manage Categories</a> |
+        <a href="browse_characters.php">Browse Characters</a>
+
     </p>
 
     <!-- ✅ Show current sorting -->
@@ -84,6 +86,8 @@ $characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <td><?= htmlspecialchars($char['character_type']) ?></td>
                     <td><?= htmlspecialchars(substr($char['description'], 0, 100)) ?><?= strlen($char['description']) > 100 ? '...' : '' ?></td>
                     <td>
+                        <a href="view_character.php?id=<?= $char['character_id']?>">View Character</a>
+
                         <?php if (!empty($char['image_url'])): ?>
                             <img src="<?= htmlspecialchars($char['image_url']) ?>" alt="<?= htmlspecialchars($char['name']) ?>">
                         <?php endif; ?>

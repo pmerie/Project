@@ -1,15 +1,28 @@
 <?php
-require 'db_connect.php';
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 session_start();
+require 'db_connect.php';
 
-//Fetch all categories for the dropdown
-$categoryStmt = $db->query("SELECT * FROM categories ORDER BY category_name");
-$categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
-
+// Check if user is logged in and admin
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
 }
+
+$stmt = $db->prepare("SELECT role FROM users WHERE user_id = ?");
+$stmt->execute([$_SESSION['user_id']]);
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$user || $user['role'] !== 'admin') {
+    die("❌ Access denied. Admins only.");
+}
+
+// Fetch all categories for the dropdown
+$categoryStmt = $db->query("SELECT * FROM categories ORDER BY category_name");
+$categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $current_user_id = $_SESSION['user_id'];
 
@@ -36,11 +49,12 @@ if (!$char) {
 
 // Update the character when form is submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = $_POST['name'];
-    $film_name = $_POST['film_name']; // typing the film name
-    $character_type = $_POST['character_type'];
+    $name = trim($_POST['name']);
+    $film_name = trim($_POST['film_name']);
+    $character_type = trim($_POST['character_type']);
     $description = $_POST['description'];
-    $image_url = $_POST['image_url'];
+    $image_url = trim($_POST['image_url']);
+    $category_id = !empty($_POST['category_id']) ? $_POST['category_id'] : null;
 
     // Check if the film already exists
     $stmt = $db->prepare("SELECT film_id FROM films WHERE film_name = ? LIMIT 1");
@@ -50,17 +64,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($film) {
         $film_id = $film['film_id'];
     } else {
-        // Insert new film (minimal fields, associate with current user)
+        // Insert new film safely
         $stmt = $db->prepare("
-            INSERT INTO films (film_name, year, image_url, description, director_id, genre_id, user_id)
-            VALUES (?, 0, NULL, '', 1, 1, ?)
+            INSERT INTO films (film_name, year, image_url, description)
+            VALUES (?, 0, NULL, '')
         ");
-        $stmt->execute([$film_name, $current_user_id]);
+        $stmt->execute([$film_name]);
         $film_id = $db->lastInsertId();
     }
 
     // Update character
-    $category_id = $_POST['category_id'] ?? null;
     $stmt = $db->prepare("
         UPDATE characters
         SET name = ?, film_id = ?, character_type = ?, description = ?, image_url = ?, category_id = ?
@@ -89,6 +102,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Character</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <script>
+    tinymce.init({
+        selector: '#description',
+        menubar: false,
+        plugins: 'lists link',
+        toolbar: 'undo redo | bold italic | bullist numlist | link'
+    });
+    </script>
 
 </head>
 <body>
@@ -105,22 +127,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <input type="text" name="character_type" value="<?= htmlspecialchars($char['character_type']) ?>"><br><br>
 
         <label>Description:</label><br>
-        <textarea name="description" rows="5" cols="40"><?= htmlspecialchars($char['description']) ?></textarea><br><br>
+        <textarea id="description "name="description" rows="5" cols="40"><?= $char['description'] ?></textarea><br><br>
 
         <label>Image URL:</label><br>
         <input type="text" name="image_url" value="<?= htmlspecialchars($char['image_url']) ?>"><br><br>
 
-            <!--Adding select for categories-->
-    <label>category:</label>
-    <select name="category_id">
-        <option value="">-- Select Category --</option>
-        <?php foreach ($categories as $cat): ?>
-            <option value="<?= $cat['category_id']?>">
-                <?= (isset($char['category_id']) && $char['category_id'] == $cat['category_id']) ? 'selected' : '' ?>
-                <?= htmlspecialchars($cat['category_name'])?>
-            </option>
-        <?php endforeach; ?>
-    </select><br><br>
+        <!-- Adding select for categories -->
+        <label>Category:</label>
+        <select name="category_id">
+            <option value="">-- Select Category --</option>
+            <?php foreach ($categories as $cat): ?>
+                <option value="<?= $cat['category_id']?>" 
+                    <?= (isset($char['category_id']) && $char['category_id'] == $cat['category_id']) ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($cat['category_name'])?>
+                </option>
+            <?php endforeach; ?>
+        </select><br><br>
 
         <button type="submit">Update Character</button>
     </form>

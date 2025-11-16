@@ -7,6 +7,16 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
+// Fetch user role
+$stmt = $db->prepare("SELECT role FROM users WHERE user_id = ?");
+$stmt->execute([$_SESSION['user_id']]);
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$user || $user['role'] !== 'admin') {
+    die("❌ Access denied. Admins only.");
+}
+
+
 $message = "";
 
 // Handle add/update form submission

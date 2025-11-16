@@ -15,17 +15,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$username]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
  
-        // ===== DEBUG START =====
-        echo "<pre>DEBUG: "; 
-        if (!$user) {
-            echo "No user found for username: " . htmlspecialchars($username);
-        } else {
-            echo "Fetched user:\n";
-            print_r($user);
-        }
-        echo "</pre>";
-        // ===== DEBUG END =====
- 
         // Verify password if user exists
         if ($user && password_verify($password, $user['password'])) {
             $_SESSION['user_id'] = $user['user_id'];

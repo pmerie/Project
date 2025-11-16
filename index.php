@@ -29,7 +29,9 @@ $characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <p>
         <a href="list_characters.php">Manage Characters</a> | 
         <a href="admin.php">Add New Character</a> |
-        <a href="categories.php">Manage Categories</a>
+        <a href="categories.php">Manage Categories</a> |
+        <p><a href="browse_characters.php">Browse Characters</a></p>
+
     </p>
 
     <?php if (empty($characters)): ?>
@@ -44,6 +46,8 @@ $characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <p><strong>Character Type:</strong> <?= htmlspecialchars($char['character_type']) ?></p>
                 <p><?= htmlspecialchars($char['description']) ?></p>
                 <p><em>Film:</em> <?= htmlspecialchars($char['film_name'] ?? 'Unknown') ?></p>
+
+                <a href="view_character.php?id=<?= $char['character_id']?>">View Character</a>
             </div>
         <?php endforeach; ?>
     <?php endif; ?>
