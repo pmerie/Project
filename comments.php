@@ -24,17 +24,17 @@ if (isset($_GET['delete'])) {
     exit;
 }
 
-// --- Hide comment ---
+// --- Hide comment (set visible = 0) ---
 if (isset($_GET['hide'])) {
-    $stmt = $db->prepare("UPDATE comments SET is_hidden = 1 WHERE comment_id = ?");
+    $stmt = $db->prepare("UPDATE comments SET is_visible = 0 WHERE comment_id = ?");
     $stmt->execute([$_GET['hide']]);
     header("Location: comments.php");
     exit;
 }
 
-// --- Unhide comment ---
+// --- Unhide comment (set visible = 1) ---
 if (isset($_GET['unhide'])) {
-    $stmt = $db->prepare("UPDATE comments SET is_hidden = 0 WHERE comment_id = ?");
+    $stmt = $db->prepare("UPDATE comments SET is_visible = 1 WHERE comment_id = ?");
     $stmt->execute([$_GET['unhide']]);
     header("Location: comments.php");
     exit;
@@ -47,7 +47,6 @@ if (isset($_GET['disemvowel'])) {
     $comment = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($comment) {
-        // If original_text is empty, store current comment_text in it
         if (empty($comment['original_text'])) {
             $stmt2 = $db->prepare("UPDATE comments SET original_text = ? WHERE comment_id = ?");
             $stmt2->execute([$comment['comment_text'], $_GET['disemvowel']]);
@@ -61,7 +60,7 @@ if (isset($_GET['disemvowel'])) {
     exit;
 }
 
-// --- Restore comment ---
+// --- Restore original comment ---
 if (isset($_GET['restore'])) {
     $stmt = $db->prepare("SELECT original_text FROM comments WHERE comment_id = ?");
     $stmt->execute([$_GET['restore']]);
@@ -75,8 +74,7 @@ if (isset($_GET['restore'])) {
     exit;
 }
 
-
-// --- Fetch all comments with character/page info ---
+// --- Fetch all comments ---
 $stmt = $db->query("
     SELECT c.*, ch.name AS character_name
     FROM comments c
@@ -92,12 +90,13 @@ $comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Moderate Comments</title>
+    <link rel="stylesheet" href="style.css">
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         table { border-collapse: collapse; width: 100%; }
         th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        th { background-color: #f4f4f4; }
-        a { text-decoration: none; color: blue; }
+        th { background-color: #618264; }
+        a { text-decoration: none; color: #618264; }
     </style>
 </head>
 <body>
@@ -110,7 +109,7 @@ $comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <table>
             <tr>
                 <th>ID</th>
-                <th>Character/Page</th>
+                <th>Character</th>
                 <th>User</th>
                 <th>Comment</th>
                 <th>Status</th>
@@ -122,19 +121,19 @@ $comments = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <td><?= htmlspecialchars($c['character_name']) ?></td>
                     <td><?= htmlspecialchars($c['user_name'] ?? 'Guest') ?></td>
                     <td><?= htmlspecialchars($c['comment_text']) ?></td>
-                    <td><?= $c['is_hidden'] ? 'Hidden' : 'Visible' ?></td>
+                    <td><?= $c['is_visible'] ? 'Visible' : 'Hidden' ?></td>
                     <td>
-                        <?php if (!$c['is_hidden']): ?>
+                        <?php if ($c['is_visible']): ?>
                             <a href="?hide=<?= $c['comment_id'] ?>">Hide</a> |
                         <?php else: ?>
                             <a href="?unhide=<?= $c['comment_id'] ?>">Unhide</a> |
                         <?php endif; ?>
 
                         <a href="?delete=<?= $c['comment_id'] ?>" onclick="return confirm('Delete this comment?')">Delete</a> |
-                        <a href="?disemvowel=<?= $c['comment_id'] ?>" onclick="return confirm('Disemvowel this comment?')">Disemvowel</a> |
+                        <a href="?disemvowel=<?= $c['comment_id'] ?>" onclick="return confirm('Disemvowel this comment?')">Disemvowel</a>
 
                         <?php if (!empty($c['original_text'])): ?>
-                            <a href="?restore=<?= $c['comment_id'] ?>" onclick="return confirm('Restore original comment?')">Restore</a>
+                            | <a href="?restore=<?= $c['comment_id'] ?>" onclick="return confirm('Restore original?')">Restore</a>
                         <?php endif; ?>
                     </td>
                 </tr>

@@ -2,10 +2,9 @@
 session_start();
 require 'db_connect.php';
 
-// Restrict to logged-in users only
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
+// ✅ Restrict access to admins only
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+    die("❌ Access denied. Admins only.");
 }
 
 //  Sorting setup
@@ -13,7 +12,7 @@ $sort = $_GET['sort'] ?? 'name';
 $order = $_GET['order'] ?? 'ASC';
 
 // Only allow safe options
-$allowedSort = ['name', 'film_name', 'character_type'];
+$allowedSort = ['name', 'film_name', 'created_at'];
 $allowedOrder = ['ASC', 'DESC'];
 
 if (!in_array($sort, $allowedSort)) $sort = 'name';
@@ -40,7 +39,7 @@ $characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <style>
         table { border-collapse: collapse; width: 100%; }
         th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
+        th { background-color: #618264; }
         img { max-width: 100px; height: auto; }
         a.sort-active { font-weight: bold; text-decoration: underline; }
     </style>
@@ -52,7 +51,6 @@ $characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <a href="index.php">Home</a> |
         <a href="categories.php">Manage Categories</a> |
         <a href="browse_characters.php">Browse Characters</a>
-
     </p>
 
     <!-- ✅ Show current sorting -->
@@ -72,8 +70,8 @@ $characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
                        class="<?= $sort === 'film_name' ? 'sort-active' : '' ?>">Film</a>
                 </th>
                 <th>
-                    <a href="?sort=character_type&order=<?= $sort === 'character_type' && $order === 'ASC' ? 'DESC' : 'ASC' ?>" 
-                       class="<?= $sort === 'character_type' ? 'sort-active' : '' ?>">Character Type</a>
+                    <a href="?sort=created_at&order=<?= $sort === 'created_at' && $order === 'ASC' ? 'DESC' : 'ASC' ?>" 
+                       class="<?= $sort === 'created_at' ? 'sort-active' : '' ?>">created_at</a>
                 </th>
                 <th>Description</th>
                 <th>Image</th>
@@ -83,11 +81,10 @@ $characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <tr>
                     <td><?= htmlspecialchars($char['name']) ?></td>
                     <td><?= htmlspecialchars($char['film_name'] ?? 'Unknown') ?></td>
-                    <td><?= htmlspecialchars($char['character_type']) ?></td>
+                    <td><?= htmlspecialchars($char['created_at']) ?></td>
                     <td><?= htmlspecialchars(substr($char['description'], 0, 100)) ?><?= strlen($char['description']) > 100 ? '...' : '' ?></td>
                     <td>
                         <a href="view_character.php?id=<?= $char['character_id']?>">View Character</a>
-
                         <?php if (!empty($char['image_url'])): ?>
                             <img src="<?= htmlspecialchars($char['image_url']) ?>" alt="<?= htmlspecialchars($char['name']) ?>">
                         <?php endif; ?>

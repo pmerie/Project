@@ -1,5 +1,6 @@
 <?php
 require 'db_connect.php';
+include 'header.php';
 
 // Fetch all characters with film name
 $stmt = $db->query("
@@ -9,31 +10,44 @@ $stmt = $db->query("
     ORDER BY characters.created_at DESC
 ");
 $characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Fetch all categories for the dropdown
+$stmt = $db->query("SELECT * FROM categories ORDER BY category_name ASC");
+$categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ghibli World Archive</title>
-    <link rel="stylesheet" href="style.css">
 
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .character-card { border: 1px solid #ccc; border-radius: 8px; padding: 15px; margin-bottom: 15px; max-width: 400px; }
-        .character-card img { max-width: 100%; height: auto; display: block; margin-bottom: 10px; border-radius: 5px; }
-    </style>
-</head>
-<body>
-    <h1>Ghibli World Archive</h1>
-    <p>
-        <a href="list_characters.php">Manage Characters</a> | 
-        <a href="admin.php">Add New Character</a> |
-        <a href="categories.php">Manage Categories</a> |
-        <p><a href="browse_characters.php">Browse Characters</a></p>
+<main>
 
-    </p>
+    <!-- Categories Dropdown -->
+    <?php if (!empty($categories)): ?>
+        <form id="categoryForm" style="margin-bottom: 20px;">
+            <label for="categorySelect"><strong>Browse by Category:</strong></label>
+            <select id="categorySelect" name="category">
+                <option value="">-- Choose a category --</option>
+                <?php foreach ($categories as $cat): ?>
+                    <option value="category_view.php?id=<?= $cat['category_id'] ?>">
+                        <?= htmlspecialchars($cat['category_name']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <button type="submit">Go</button>
+        </form>
 
+        <script>
+            const form = document.getElementById('categoryForm');
+            const select = document.getElementById('categorySelect');
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const url = select.value;
+                if (url) {
+                    window.location.href = url;
+                }
+            });
+        </script>
+    <?php endif; ?>
+
+    <!-- Characters List -->
     <?php if (empty($characters)): ?>
         <p>No characters added yet.</p>
     <?php else: ?>
@@ -47,9 +61,18 @@ $characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <p><?= htmlspecialchars($char['description']) ?></p>
                 <p><em>Film:</em> <?= htmlspecialchars($char['film_name'] ?? 'Unknown') ?></p>
 
-                <a href="view_character.php?id=<?= $char['character_id']?>">View Character</a>
+                <a href="view_character.php?id=<?= $char['character_id'] ?>">View Character</a>
             </div>
         <?php endforeach; ?>
     <?php endif; ?>
-</body>
-</html>
+
+</main>
+
+<p><a href="list_characters.php">← Back to character list</a></p>
+
+
+<style>
+body { font-family: Arial, sans-serif; margin: 20px; }
+.character-card { border: 1px solid #ccc; border-radius: 8px; padding: 15px; margin-bottom: 15px; max-width: 400px; }
+.character-card img { max-width: 100%; height: auto; display: block; margin-bottom: 10px; border-radius: 5px; }
+</style>
