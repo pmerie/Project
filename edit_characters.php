@@ -27,11 +27,17 @@ $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
 $current_user_id = $_SESSION['user_id'];
 
 // Check if character ID is provided
-if (!isset($_GET['id']) || empty($_GET['id'])) {
-    die("Character ID is missing.");
+if (!isset($_GET['id']) || !ctype_digit($_GET['id'])) {
+    die("❌ Invalid character ID.");
 }
+$char_id = (int) $_GET['id']; // safe to use in SQL
 
-$char_id = $_GET['id'];
+//Previous
+// if (!isset($_GET['id']) || empty($_GET['id'])) {
+//     die("Character ID is missing.");
+// }
+
+// $char_id = $_GET['id'];
 
 // Fetch the character with film name
 $stmt = $db->prepare("
@@ -57,18 +63,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $description = trim($_POST['description'] ?? '');
     $image_url = trim($_POST['image_url'] ?? '');
     $category_id = $_POST['category_id'] ?? '';
+    if ($category_id !== '' && !ctype_digit($category_id)) {
+        $fieldErrors['category_id'] = "❌ Invalid category selected.";
+    }
+    $category_id = (int) $category_id;
 
-    // ----------------- VALIDATION -----------------
+    //Previous
+    // $category_id = $_POST['category_id'] ?? '';
+
+    // VALIDATION 
     if ($name === '') $fieldErrors['name'] = "Name is required.";
     elseif (strlen($name) > 255) $fieldErrors['name'] = "Name cannot exceed 255 characters.";
 
     if ($film_name === '') $fieldErrors['film_name'] = "Film name is required.";
     elseif (strlen($film_name) > 255) $fieldErrors['film_name'] = "Film name cannot exceed 255 characters.";
 
-    // Character type is optional
-    if ($character_type && strlen($character_type) > 100) {
-        $fieldErrors['character_type'] = "Character Type cannot exceed 100 characters.";
-    }
+    // Character Type is required
+    if ($character_type === '') $fieldErrors['character_type'] = "Character Type is required.";
+    elseif (strlen($character_type) > 100) $fieldErrors['character_type'] = "Character Type cannot exceed 100 characters.";
+
 
     if ($description === '') $fieldErrors['description'] = "Description is required.";
     elseif (strlen($description) > 1000) $fieldErrors['description'] = "Description cannot exceed 1000 characters.";
@@ -77,10 +90,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($image_url === '') $fieldErrors['image_url'] = "Image URL is required.";
     elseif (!filter_var($image_url, FILTER_VALIDATE_URL)) $fieldErrors['image_url'] = "Invalid Image URL.";
 
-    if ($category_id === '') $fieldErrors['category_id'] = "Category is required.";
-    elseif (!ctype_digit($category_id)) $fieldErrors['category_id'] = "Invalid category selected.";
+    // if ($category_id === '') $fieldErrors['category_id'] = "Category is required.";
+    // elseif (!ctype_digit($category_id)) $fieldErrors['category_id'] = "Invalid category selected.";
 
-    // ----------------- DATABASE UPDATE -----------------
+    //  DATABASE UPDATE 
     if (empty($fieldErrors)) {
         $stmt = $db->prepare("SELECT film_id FROM films WHERE film_name = ? LIMIT 1");
         $stmt->execute([$film_name]);
@@ -145,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="error"><?= $fieldErrors['film_name'] ?? '' ?></div>
     <br>
 
-    <label>Character Type (optional):</label><br>
+    <label>Character Type:</label><br>
     <input type="text" name="character_type" value="<?= htmlspecialchars($char['character_type'] ?? '') ?>">
     <div class="error"><?= $fieldErrors['character_type'] ?? '' ?></div>
     <br>

@@ -16,7 +16,7 @@ if (!$user || $user['role'] !== 'admin') {
     die("❌ Access denied. Admins only.");
 }
 
-// --- Delete comment ---
+// Delete comment 
 if (isset($_GET['delete'])) {
     $stmt = $db->prepare("DELETE FROM comments WHERE comment_id = ?");
     $stmt->execute([$_GET['delete']]);
@@ -24,7 +24,7 @@ if (isset($_GET['delete'])) {
     exit;
 }
 
-// --- Hide comment (set visible = 0) ---
+//  Hide comment (set visible = 0) 
 if (isset($_GET['hide'])) {
     $stmt = $db->prepare("UPDATE comments SET is_visible = 0 WHERE comment_id = ?");
     $stmt->execute([$_GET['hide']]);
@@ -32,7 +32,7 @@ if (isset($_GET['hide'])) {
     exit;
 }
 
-// --- Unhide comment (set visible = 1) ---
+// Unhide comment (set visible = 1) 
 if (isset($_GET['unhide'])) {
     $stmt = $db->prepare("UPDATE comments SET is_visible = 1 WHERE comment_id = ?");
     $stmt->execute([$_GET['unhide']]);
@@ -40,7 +40,7 @@ if (isset($_GET['unhide'])) {
     exit;
 }
 
-// --- Disemvowel comment ---
+// Disemvowel comment 
 if (isset($_GET['disemvowel'])) {
     $stmt = $db->prepare("SELECT comment_text, original_text FROM comments WHERE comment_id = ?");
     $stmt->execute([$_GET['disemvowel']]);
@@ -60,7 +60,7 @@ if (isset($_GET['disemvowel'])) {
     exit;
 }
 
-// --- Restore original comment ---
+// Restore original comment 
 if (isset($_GET['restore'])) {
     $stmt = $db->prepare("SELECT original_text FROM comments WHERE comment_id = ?");
     $stmt->execute([$_GET['restore']]);
@@ -74,7 +74,7 @@ if (isset($_GET['restore'])) {
     exit;
 }
 
-// --- Fetch all comments ---
+// Fetch all comments 
 $stmt = $db->query("
     SELECT c.*, ch.name AS character_name
     FROM comments c

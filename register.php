@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // ----------------- INSERT USER -----------------
+    // INSERT USER 
     if (empty($errors)) {
         $hash = password_hash($password, PASSWORD_DEFAULT);
 

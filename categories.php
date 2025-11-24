@@ -2,6 +2,7 @@
 session_start();
 require 'db_connect.php';
 
+// ------------------- AUTH CHECK -------------------
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
@@ -18,40 +19,36 @@ if (!$user || $user['role'] !== 'admin') {
 
 $message = "";
 
-// -----------------------------------------------------
-// Handle Add / Update with Proper Validation (4.1)
-// -----------------------------------------------------
+//  HANDLE ADD / UPDATE 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $category_name = trim($_POST['category_name']);
     $category_id   = $_POST['category_id'] ?? '';
 
-    // ---------------- VALIDATION ----------------
+    // Validate numericality of category_id
+    if ($category_id !== '' && !ctype_digit($category_id)) {
+        die("❌ Invalid category ID.");
+    }
+    $category_id = (int) $category_id;
+
+    // Validate category name
     if ($category_name === '') {
         $message = "⚠️ Category name is required.";
-    }
-    elseif (strlen($category_name) < 3) {
+    } elseif (strlen($category_name) < 3) {
         $message = "⚠️ Category name must be at least 3 characters.";
-    }
-    elseif (strlen($category_name) > 50) {
+    } elseif (strlen($category_name) > 50) {
         $message = "⚠️ Category name cannot exceed 50 characters.";
-    }
-    elseif (!preg_match('/^[A-Za-z0-9\s\-]+$/', $category_name)) {
+    } elseif (!preg_match('/^[A-Za-z0-9\s\-]+$/', $category_name)) {
         $message = "⚠️ Category name contains invalid characters.";
-    }
-    else {
+    } else {
         // Check for duplicates
-        $stmt = $db->prepare("
-            SELECT COUNT(*) FROM categories 
-            WHERE category_name = ? AND category_id != ?
-        ");
-        $stmt->execute([$category_name, $category_id ?? 0]);
+        $stmt = $db->prepare("SELECT COUNT(*) FROM categories WHERE category_name = ? AND category_id != ?");
+        $stmt->execute([$category_name, $category_id]);
         $exists = $stmt->fetchColumn();
 
         if ($exists > 0) {
             $message = "❌ Category name already exists.";
         } else {
-            // ---------------- ADD / UPDATE ----------------
             if ($category_id) {
                 $stmt = $db->prepare("UPDATE categories SET category_name = ? WHERE category_id = ?");
                 $stmt->execute([$category_name, $category_id]);
@@ -65,99 +62,90 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// -----------------------------------------------------
-// Load category for editing
-// -----------------------------------------------------
+// LOAD CATEGORY FOR EDIT 
 $editCategory = null;
 if (isset($_GET['edit'])) {
+    if (!ctype_digit($_GET['edit'])) {
+        die("❌ Invalid category ID.");
+    }
+    $edit_id = (int) $_GET['edit'];
     $stmt = $db->prepare("SELECT * FROM categories WHERE category_id = ?");
-    $stmt->execute([$_GET['edit']]);
+    $stmt->execute([$edit_id]);
     $editCategory = $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
-// -----------------------------------------------------
-// Optional delete
-// -----------------------------------------------------
+// DELETE CATEGORY 
 if (isset($_GET['delete'])) {
+    if (!ctype_digit($_GET['delete'])) {
+        die("❌ Invalid category ID.");
+    }
+    $delete_id = (int) $_GET['delete'];
     $stmt = $db->prepare("DELETE FROM categories WHERE category_id = ?");
-    $stmt->execute([$_GET['delete']]);
+    $stmt->execute([$delete_id]);
     $message = "✅ Category deleted successfully";
 }
 
-// -----------------------------------------------------
-// Fetch all categories
-// -----------------------------------------------------
+// FETCH ALL CATEGORIES 
 $stmt = $db->query("SELECT * FROM categories ORDER BY category_name");
 $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Categories</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manage Categories</title>
+<link rel="stylesheet" href="style.css">
+<style>
+    table { border-collapse: collapse; width: 50%; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #618264; }
+    .message { font-weight: bold; }
+</style>
 </head>
 <body>
+<h1>Manage Categories</h1>
 
-    <h2>Manage Categories</h2>
+<p>
+    <a href="list_characters.php">View All Characters</a> |
+    <a href="admin.php">Add New Character</a> |
+    <a href="index.php">Home</a>
+</p>
 
-    <p>
-        <a href="list_characters.php">View All Characters</a> |
-        <a href="admin.php">Add New Character</a> |
-        <a href="index.php">Home</a>
+<?php if ($message): ?>
+    <p class="message" style="color: <?= str_starts_with($message, '✅') ? 'green' : 'red' ?>;">
+        <?= htmlspecialchars($message) ?>
     </p>
+<?php endif; ?>
 
-    <?php if ($message): ?>
-        <?php
-            $isSuccess = str_starts_with($message, "✅" )    
-        ?>
+<!-- Add / Edit Form -->
+<form method="post">
+    <input type="hidden" name="category_id" value="<?= htmlspecialchars($editCategory['category_id'] ?? '') ?>">
+    <label>Category Name:
+        <input type="text" name="category_name" value="<?= htmlspecialchars($editCategory['category_name'] ?? '') ?>" required>
+    </label>
+    <button type="submit"><?= $editCategory ? 'Update' : 'Add' ?> Category</button>
+</form>
 
-        <p style="color: <?= $isSuccess ? 'green' : 'red' ?>;font-weight: bold;">
-            <?= htmlspecialchars($message) ?>
-        </p>
-    <?php endif; ?>
-
-    
-
-    <form method="post">
-        <input type="hidden" name="category_id" value="<?= $editCategory['category_id'] ?? '' ?>">
-        
-        <label>
-            Category Name:
-            <input type="text" 
-                   name="category_name" 
-                   value="<?= htmlspecialchars($editCategory['category_name'] ?? '') ?>" 
-                   required>
-        </label>
-
-        <button type="submit"><?= $editCategory ? 'Update' : 'Add' ?> Category</button>
-    </form>
-
-    <h3>Existing Categories</h3>
-
-    <table border="1" cellpadding="5">
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Action</th>
-        </tr>
-
-        <?php foreach ($categories as $c): ?>
-        <tr>
-            <td><?= $c['category_id'] ?></td>
-            <td><?= htmlspecialchars($c['category_name']) ?></td>
-            <td>
-                <a href="?edit=<?= $c['category_id'] ?>">Edit</a> |
-                <a href="?delete=<?= $c['category_id'] ?>" onclick="return confirm('Delete this category?');">
-                    Delete
-                </a>
-            </td>
-        </tr>
-        <?php endforeach; ?>
-
-    </table>
+<h2>Existing Categories</h2>
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Actions</th>
+    </tr>
+    <?php foreach ($categories as $c): ?>
+    <tr>
+        <td><?= $c['category_id'] ?></td>
+        <td><?= htmlspecialchars($c['category_name']) ?></td>
+        <td>
+            <a href="?edit=<?= $c['category_id'] ?>">Edit</a> |
+            <a href="?delete=<?= $c['category_id'] ?>" onclick="return confirm('Delete this category?');">Delete</a>
+        </td>
+    </tr>
+    <?php endforeach; ?>
+</table>
 
 </body>
 </html>

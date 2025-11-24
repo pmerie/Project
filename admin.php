@@ -34,15 +34,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $image_url = trim($_POST['image_url'] ?? '');
     $category_id = $_POST['category_id'] ?? '';
 
-    // ----------------- FIELD VALIDATIONS -----------------
+    // FIELD VALIDATIONS 
     if ($name === '') $fieldErrors['name'] = "Name is required.";
     elseif (strlen($name) > 255) $fieldErrors['name'] = "Name cannot exceed 255 characters.";
 
     if ($film_name === '') $fieldErrors['film_name'] = "Film name is required.";
     elseif (strlen($film_name) > 255) $fieldErrors['film_name'] = "Film name cannot exceed 255 characters.";
 
-    // Character Type is optional
-    if (strlen($character_type) > 100) $fieldErrors['character_type'] = "Character Type cannot exceed 100 characters.";
+    // Character Type is now required
+    if ($character_type === '') $fieldErrors['character_type'] = "Character Type is required.";
+    elseif (strlen($character_type) > 100) $fieldErrors['character_type'] = "Character Type cannot exceed 100 characters.";
 
     if ($description === '') $fieldErrors['description'] = "Description is required.";
     elseif (strlen($description) > 1000) $fieldErrors['description'] = "Description cannot exceed 1000 characters.";
@@ -51,10 +52,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($image_url === '') $fieldErrors['image_url'] = "Image URL is required.";
     elseif (!filter_var($image_url, FILTER_VALIDATE_URL)) $fieldErrors['image_url'] = "Invalid Image URL.";
 
-    if ($category_id === '') $fieldErrors['category_id'] = "Category is required.";
-    elseif (!ctype_digit($category_id)) $fieldErrors['category_id'] = "Invalid category selected.";
+    // if ($category_id === '') $fieldErrors['category_id'] = "Category is required.";
+    // elseif (!ctype_digit($category_id)) $fieldErrors['category_id'] = "Invalid category selected.";
 
-    // ----------------- DATABASE INSERT -----------------
+    // DATABASE INSERT 
     if (empty($fieldErrors)) {
         // Check if film exists
         $stmt = $db->prepare("SELECT film_id FROM films WHERE film_name = ? LIMIT 1");
@@ -115,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="error"><?= $fieldErrors['film_name'] ?? '' ?></div>
     <br>
 
-    <label>Character Type (optional):</label><br>
+    <label>Character Type:</label><br>
     <input type="text" name="character_type" value="<?= htmlspecialchars($_POST['character_type'] ?? '') ?>">
     <div class="error"><?= $fieldErrors['character_type'] ?? '' ?></div>
     <br>

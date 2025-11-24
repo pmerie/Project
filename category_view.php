@@ -3,9 +3,11 @@ session_start();
 require 'db_connect.php';
 
 $category_id = $_GET['id'] ?? null;
-if (!$category_id) {
-    die("Invalid category.");
+if (!$category_id || !ctype_digit($category_id)) {
+    die("❌ Invalid category ID.");
 }
+$category_id = (int) $category_id;
+
 
 // Fetch category name
 $cat = $db->prepare("SELECT category_name FROM categories WHERE category_id = ?");
