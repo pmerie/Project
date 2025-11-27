@@ -154,9 +154,11 @@ if (isset($_FILES['image_file']) && $_FILES['image_file']['error'] === UPLOAD_ER
 
 <p>
     <a href="list_characters.php">View All Characters</a> |
+    <a href="list_users.php">Manage Users</a> |
     <a href="categories.php">Manage Categories</a> |
     <a href="comments.php">Moderate Comments</a> |
     <a href="index.php">Home</a>
+    
 </p>
 
 <?php if ($success): ?>
