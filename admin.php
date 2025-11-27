@@ -3,9 +3,16 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+//Session and check login
 session_start();
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
+
 require 'db_connect.php';
 
+// Only allow logged-in admins
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
@@ -14,7 +21,6 @@ if (!isset($_SESSION['user_id'])) {
 $stmt = $db->prepare("SELECT role FROM users WHERE user_id = ?");
 $stmt->execute([$_SESSION['user_id']]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
 if (!$user || $user['role'] !== 'admin') {
     die("❌ Access denied. Admins only.");
 }
@@ -34,28 +40,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $image_url = trim($_POST['image_url'] ?? '');
     $category_id = $_POST['category_id'] ?? '';
 
-    // FIELD VALIDATIONS 
+    // ---------- FIELD VALIDATIONS ----------
     if ($name === '') $fieldErrors['name'] = "Name is required.";
     elseif (strlen($name) > 255) $fieldErrors['name'] = "Name cannot exceed 255 characters.";
 
     if ($film_name === '') $fieldErrors['film_name'] = "Film name is required.";
     elseif (strlen($film_name) > 255) $fieldErrors['film_name'] = "Film name cannot exceed 255 characters.";
 
-    // Character Type is now required
     if ($character_type === '') $fieldErrors['character_type'] = "Character Type is required.";
     elseif (strlen($character_type) > 100) $fieldErrors['character_type'] = "Character Type cannot exceed 100 characters.";
 
     if ($description === '') $fieldErrors['description'] = "Description is required.";
     elseif (strlen($description) > 1000) $fieldErrors['description'] = "Description cannot exceed 1000 characters.";
 
-    // Image URL is required
-    if ($image_url === '') $fieldErrors['image_url'] = "Image URL is required.";
-    elseif (!filter_var($image_url, FILTER_VALIDATE_URL)) $fieldErrors['image_url'] = "Invalid Image URL.";
+    // if ($image_url !== '' && !filter_var($image_url, FILTER_VALIDATE_URL)) {
+    //     $fieldErrors['image_url'] = "Invalid Image URL.";
+    // }
 
-    // if ($category_id === '') $fieldErrors['category_id'] = "Category is required.";
-    // elseif (!ctype_digit($category_id)) $fieldErrors['category_id'] = "Invalid category selected.";
+// ---------- IMAGE UPLOAD HANDLING ----------
+$uploadedImage = null; // default if no upload
 
-    // DATABASE INSERT 
+// Make sure a file was uploaded
+if (isset($_FILES['image_file']) && $_FILES['image_file']['error'] === UPLOAD_ERR_OK) {
+
+    $fileTmpPath = $_FILES['image_file']['tmp_name'];
+    $fileName = basename($_FILES['image_file']['name']);
+
+    // STEP 5 — Real image-ness test
+    $imageInfo = getimagesize($fileTmpPath);
+
+    if ($imageInfo === false) {
+        $fieldErrors['image_file'] = "❌ File is not a real image.";
+    } else {
+
+        $mimeType = $imageInfo['mime'];
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+
+        if (!in_array($mimeType, $allowedTypes)) {
+            $fieldErrors['image_file'] = "❌ Only JPG, PNG, and GIF images are allowed.";
+        } else {
+
+            // Ensure uploads directory exists
+            $uploadsDir = __DIR__ . '/uploads/';
+            if (!is_dir($uploadsDir)) {
+                mkdir($uploadsDir, 0777, true);
+            }
+
+            $newFilePath = $uploadsDir . $fileName;
+
+            if (move_uploaded_file($fileTmpPath, $newFilePath)) {
+                $uploadedImage = $fileName; // store filename for DB
+            } else {
+                $fieldErrors['image_file'] = "❌ Error moving uploaded file.";
+            }
+        }
+    }
+
+} else {
+    // No file uploaded — this is OK (optional)
+    $uploadedImage = null;
+}
+
+
+
+    // ---------- DATABASE INSERT ----------
     if (empty($fieldErrors)) {
         // Check if film exists
         $stmt = $db->prepare("SELECT film_id FROM films WHERE film_name = ? LIMIT 1");
@@ -69,9 +117,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $film_id = $db->lastInsertId();
         }
 
-        // Insert character (use empty string if character_type is empty)
-        $stmt = $db->prepare("INSERT INTO characters (name, film_id, character_type, description, image_url, category_id) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$name, $film_id, $character_type ?: '', $description, $image_url, $category_id]);
+        // Insert character
+        $stmt = $db->prepare("
+            INSERT INTO characters (name, film_id, character_type, description, image_url, category_id)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ");
+        $stmt->execute([
+            $name,
+            $film_id,
+            $character_type ?: '',
+            $description,
+            $uploadedImage ?: $image_url, // use uploaded image if exists, else URL input
+            $category_id
+        ]);
 
         $success = "✅ Character added successfully!";
         $_POST = [];
@@ -105,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <p style="color:green;"><?= htmlspecialchars($success) ?></p>
 <?php endif; ?>
 
-<form method="post">
+<form method="post" enctype="multipart/form-data">
     <label>Name:</label><br>
     <input type="text" name="name" value="<?= htmlspecialchars($_POST['name'] ?? '') ?>">
     <div class="error"><?= $fieldErrors['name'] ?? '' ?></div>
@@ -129,6 +187,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <label>Image URL:</label><br>
     <input type="text" name="image_url" value="<?= htmlspecialchars($_POST['image_url'] ?? '') ?>">
     <div class="error"><?= $fieldErrors['image_url'] ?? '' ?></div>
+    <br>
+
+    <label>Upload Image:</label><br>
+    <input type="file" name="image_file" accept="image/*">
+    <div class="error"><?= $fieldErrors['image_file'] ?? '' ?></div>
     <br>
 
     <label>Category:</label>

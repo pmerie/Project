@@ -3,7 +3,13 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+//Session and check login
 session_start();
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
+
 require 'db_connect.php';
 
 // Check if user is logged in and admin
@@ -30,14 +36,7 @@ $current_user_id = $_SESSION['user_id'];
 if (!isset($_GET['id']) || !ctype_digit($_GET['id'])) {
     die("❌ Invalid character ID.");
 }
-$char_id = (int) $_GET['id']; // safe to use in SQL
-
-//Previous
-// if (!isset($_GET['id']) || empty($_GET['id'])) {
-//     die("Character ID is missing.");
-// }
-
-// $char_id = $_GET['id'];
+$char_id = (int) $_GET['id'];
 
 // Fetch the character with film name
 $stmt = $db->prepare("
@@ -68,9 +67,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $category_id = (int) $category_id;
 
-    //Previous
-    // $category_id = $_POST['category_id'] ?? '';
-
     // VALIDATION 
     if ($name === '') $fieldErrors['name'] = "Name is required.";
     elseif (strlen($name) > 255) $fieldErrors['name'] = "Name cannot exceed 255 characters.";
@@ -78,22 +74,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($film_name === '') $fieldErrors['film_name'] = "Film name is required.";
     elseif (strlen($film_name) > 255) $fieldErrors['film_name'] = "Film name cannot exceed 255 characters.";
 
-    // Character Type is required
     if ($character_type === '') $fieldErrors['character_type'] = "Character Type is required.";
     elseif (strlen($character_type) > 100) $fieldErrors['character_type'] = "Character Type cannot exceed 100 characters.";
-
 
     if ($description === '') $fieldErrors['description'] = "Description is required.";
     elseif (strlen($description) > 1000) $fieldErrors['description'] = "Description cannot exceed 1000 characters.";
 
-    // Image URL is required
-    if ($image_url === '') $fieldErrors['image_url'] = "Image URL is required.";
-    elseif (!filter_var($image_url, FILTER_VALIDATE_URL)) $fieldErrors['image_url'] = "Invalid Image URL.";
+    // ---------- IMAGE UPLOAD HANDLING ----------
+    $uploadedImage = $char['uploaded_image'] ?? null; // keep current uploaded image by default
 
-    // if ($category_id === '') $fieldErrors['category_id'] = "Category is required.";
-    // elseif (!ctype_digit($category_id)) $fieldErrors['category_id'] = "Invalid category selected.";
+    if (isset($_FILES['image_file']) && $_FILES['image_file']['error'] === UPLOAD_ERR_OK) {
+        $fileTmpPath = $_FILES['image_file']['tmp_name'];
+        $fileName = basename($_FILES['image_file']['name']);
 
-    //  DATABASE UPDATE 
+        $imageInfo = getimagesize($fileTmpPath);
+        if ($imageInfo === false) {
+            $fieldErrors['image_file'] = "❌ File is not a real image.";
+        } else {
+            $mimeType = $imageInfo['mime'];
+            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+
+            if (!in_array($mimeType, $allowedTypes)) {
+                $fieldErrors['image_file'] = "❌ Only JPG, PNG, and GIF images are allowed.";
+            } else {
+                $uploadsDir = __DIR__ . '/uploads/';
+                if (!is_dir($uploadsDir)) mkdir($uploadsDir, 0777, true);
+
+                $newFilePath = $uploadsDir . $fileName;
+
+                if (move_uploaded_file($fileTmpPath, $newFilePath)) {
+                    $uploadedImage = $fileName; // save new uploaded image
+                } else {
+                    $fieldErrors['image_file'] = "❌ Error moving uploaded file.";
+                }
+            }
+        }
+    }
+
+    // ---------- REMOVE UPLOADED IMAGE IF CHECKED ----------
+    if (isset($_POST['remove_uploaded_image']) && $_POST['remove_uploaded_image'] == '1') {
+        $uploadedImage = null;
+    }
+
+    // ---------- DATABASE UPDATE ----------
     if (empty($fieldErrors)) {
         $stmt = $db->prepare("SELECT film_id FROM films WHERE film_name = ? LIMIT 1");
         $stmt->execute([$film_name]);
@@ -108,10 +131,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $stmt = $db->prepare("
             UPDATE characters
-            SET name = ?, film_id = ?, character_type = ?, description = ?, image_url = ?, category_id = ?
+            SET name = ?, film_id = ?, character_type = ?, description = ?, image_url = ?, uploaded_image = ?, category_id = ?
             WHERE character_id = ?
         ");
-        $stmt->execute([$name, $film_id, $character_type ?: '', $description, $image_url, $category_id, $char_id]);
+        $stmt->execute([$name, $film_id, $character_type ?: '', $description, $image_url, $uploadedImage, $category_id, $char_id]);
 
         $success = "✅ Character updated successfully!";
 
@@ -147,7 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <p style="color:green;"><?= htmlspecialchars($success) ?></p>
 <?php endif; ?>
 
-<form method="post">
+<form method="post" enctype="multipart/form-data">
     <label>Name:</label><br>
     <input type="text" name="name" value="<?= htmlspecialchars($char['name'] ?? '') ?>">
     <div class="error"><?= $fieldErrors['name'] ?? '' ?></div>
@@ -168,9 +191,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="error"><?= $fieldErrors['description'] ?? '' ?></div>
     <br>
 
-    <label>Image URL:</label><br>
+    <label>Image URL (Homepage image):</label><br>
     <input type="text" name="image_url" value="<?= htmlspecialchars($char['image_url'] ?? '') ?>">
     <div class="error"><?= $fieldErrors['image_url'] ?? '' ?></div>
+    <br>
+
+    <label>Upload Image (Character page):</label><br>
+    <input type="file" name="image_file" accept="image/*">
+    <?php if (!empty($char['uploaded_image'])): ?>
+        <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px; margin-bottom: 10px;">
+            <span style="white-space: nowrap;">Current uploaded image: <?= htmlspecialchars($char['uploaded_image']) ?></span>
+            <label class="checkbox-inline">
+                <input type="checkbox" name="remove_uploaded_image" value="1"> Remove uploaded image
+            </label>
+        </div>
+        <?php endif; ?>
+
+    <div class="error"><?= $fieldErrors['image_file'] ?? '' ?></div>
     <br>
 
     <label>Category:</label>

@@ -7,7 +7,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
     die("❌ Access denied. Admins only.");
 }
 
-//  Sorting setup
+// Sorting setup
 $sort = $_GET['sort'] ?? 'name';
 $order = $_GET['order'] ?? 'ASC';
 
@@ -35,12 +35,11 @@ $characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>List of Characters</title>
     <link rel="stylesheet" href="style.css">
-
     <style>
         table { border-collapse: collapse; width: 100%; }
         th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
         th { background-color: #618264; }
-        img { max-width: 100px; height: auto; }
+        img { max-width: 100px; height: auto; display: block; margin-top: 5px; }
         a.sort-active { font-weight: bold; text-decoration: underline; }
     </style>
 </head>
@@ -53,13 +52,12 @@ $characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <a href="browse_characters.php">Browse Characters</a>
     </p>
 
-    <!-- ✅ Show current sorting -->
     <p>Currently sorted by: <strong><?= htmlspecialchars(ucfirst(str_replace('_', ' ', $sort))) ?></strong> (<?= htmlspecialchars($order) ?>)</p>
 
     <?php if (empty($characters)): ?>
         <p>No characters added yet.</p>
     <?php else: ?>
-        <table> 
+        <table>
             <tr>
                 <th>
                     <a href="?sort=name&order=<?= $sort === 'name' && $order === 'ASC' ? 'DESC' : 'ASC' ?>" 
@@ -85,8 +83,17 @@ $characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <td><?= htmlspecialchars(substr($char['description'], 0, 100)) ?><?= strlen($char['description']) > 100 ? '...' : '' ?></td>
                     <td>
                         <a href="view_character.php?id=<?= $char['character_id']?>">View Character</a>
-                        <?php if (!empty($char['image_url'])): ?>
-                            <img src="<?= htmlspecialchars($char['image_url']) ?>" alt="<?= htmlspecialchars($char['name']) ?>">
+                        <?php
+                        $imgSrc = '';
+                        if (!empty($char['uploaded_image']) && file_exists('uploads/' . $char['uploaded_image'])) {
+                            $imgSrc = 'uploads/' . htmlspecialchars($char['uploaded_image']);
+                        } elseif (!empty($char['image_url'])) {
+                            $imgSrc = htmlspecialchars($char['image_url']);
+                        }
+
+                        ?>
+                        <?php if ($imgSrc !== ''): ?>
+                            <img src="<?= $imgSrc ?>" alt="<?= htmlspecialchars($char['name']) ?>">
                         <?php endif; ?>
                     </td>
                     <td>

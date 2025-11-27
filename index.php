@@ -40,9 +40,7 @@ $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const url = select.value;
-                if (url) {
-                    window.location.href = url;
-                }
+                if (url) window.location.href = url;
             });
         </script>
     <?php endif; ?>
@@ -53,14 +51,23 @@ $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <?php else: ?>
         <?php foreach ($characters as $char): ?>
             <div class="character-card">
-                <?php if (!empty($char['image_url'])): ?>
-                    <img src="<?= htmlspecialchars($char['image_url']) ?>" alt="<?= htmlspecialchars($char['name']) ?>">
+                <?php
+                $imgSrc = '';
+                if (!empty($char['uploaded_image']) && file_exists('uploads/' . $char['uploaded_image'])) {
+                    $imgSrc = 'uploads/' . htmlspecialchars($char['uploaded_image']);
+                } elseif (!empty($char['image_url'])) {
+                    $imgSrc = htmlspecialchars($char['image_url']);
+                }
+
+                ?>
+                <?php if ($imgSrc !== ''): ?>
+                    <img src="<?= $imgSrc ?>" alt="<?= htmlspecialchars($char['name']) ?>" width="200">
                 <?php endif; ?>
+
                 <h2><?= htmlspecialchars($char['name']) ?></h2>
                 <p><strong>Character Type:</strong> <?= htmlspecialchars($char['character_type']) ?></p>
                 <p><?= htmlspecialchars($char['description']) ?></p>
                 <p><em>Film:</em> <?= htmlspecialchars($char['film_name'] ?? 'Unknown') ?></p>
-
                 <a href="view_character.php?id=<?= $char['character_id'] ?>">View Character</a>
             </div>
         <?php endforeach; ?>
@@ -69,7 +76,6 @@ $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </main>
 
 <p><a href="list_characters.php">← Back to character list</a></p>
-
 
 <style>
 body { font-family: Arial, sans-serif; margin: 20px; }

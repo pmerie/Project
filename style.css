@@ -257,3 +257,19 @@ body.login-page {
 .page-box select {
     width: 25%;
 }
+
+/* ================================
+   Check Box
+================================ */
+.checkbox-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.checkbox-inline input[type="checkbox"] {
+    margin: 0;
+}
+
