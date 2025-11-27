@@ -1,6 +1,3 @@
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,22 +14,38 @@
         <nav>
             <a href="browse_characters.php">Browse Characters</a> |
             <a href="browse_categories.php">Browse by Category</a> |
-            <a href="login.php">Login</a>
-            <?php if (isset($_SESSION['user_id'])): ?>
-                | <a href="admin.php">Admin Panel</a>
-                | 
+            <?php if (!isset($_SESSION['user_id'])): ?>
+                <a href="login.php">Login</a>
+            <?php else: ?>
+                <a href="admin.php">Admin Panel</a> |
                 <form style="display:inline;" method="post" action="logout.php">
                     <button type="submit">Logout</button>
                 </form>
-           <?php// else: ?>
-                | <a href="login.php">Login</a>
-            <?php endif; ?> 
+            <?php endif; ?>
         </nav>
 
-        <!-- Search form -->
+        <?php
+        // Fetch categories for the dropdown
+        require_once 'db_connect.php';
+        $catStmt = $db->query("SELECT category_id, category_name FROM categories ORDER BY category_name");
+        $categories = $catStmt->fetchAll(PDO::FETCH_ASSOC);
+        ?>
+
+        <!-- Search form with category filter -->
         <form method="get" action="search_results.php" style="margin-top: 10px;">
-            <input type="text" name="q" placeholder="Search..." required>
+            <input type="text" name="q" placeholder="Search..." >
+
+            <select name="category">
+                <option value="all">All Categories</option>
+                <?php foreach ($categories as $cat): ?>
+                    <option value="<?= $cat['category_id'] ?>">
+                        <?= htmlspecialchars($cat['category_name']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+
             <button type="submit">Search</button>
         </form>
+
         <hr>
     </header>

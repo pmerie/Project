@@ -24,12 +24,25 @@ if (!$edit_user) die("User not found.");
 $errors = [];
 $message = '';
 
+// Default values
+$username = $edit_user['username'];
+$email = $edit_user['email'];
+$role = $edit_user['role'];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    // Collect posted values
     $username = trim($_POST['username']);
+    $email = trim($_POST['email']);
     $password = trim($_POST['password']);
     $role = $_POST['role'];
 
+    // Validation
     if ($username === '') $errors['username'] = "Username is required.";
+
+    if ($email === '') $errors['email'] = "Email is required.";
+    elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors['email'] = "Invalid email format.";
+
     if (!in_array($role, ['admin','user'])) $errors['role'] = "Invalid role.";
 
     // Check if username exists for another user
@@ -38,14 +51,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($stmt->fetch()) $errors['username'] = "Username already exists.";
 
     if (empty($errors)) {
-        if ($password) {
+
+        if ($password !== '') {
             $password_hash = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $db->prepare("UPDATE users SET username=?, password_hash=?, role=? WHERE user_id=?");
-            $stmt->execute([$username, $password_hash, $role, $edit_id]);
+
+            $stmt = $db->prepare("UPDATE users 
+                                  SET username=?, email=?, password_hash=?, role=? 
+                                  WHERE user_id=?");
+            $stmt->execute([$username, $email, $password_hash, $role, $edit_id]);
         } else {
-            $stmt = $db->prepare("UPDATE users SET username=?, role=? WHERE user_id=?");
-            $stmt->execute([$username, $role, $edit_id]);
+            $stmt = $db->prepare("UPDATE users 
+                                  SET username=?, email=?, role=? 
+                                  WHERE user_id=?");
+            $stmt->execute([$username, $email, $role, $edit_id]);
         }
+
         $message = "✅ User updated successfully!";
     }
 }
@@ -57,18 +77,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+<div class="page-box">
 <h1>Edit User</h1>
-<?php if($message) echo "<p style='color:green;'>$message</p>"; ?>
+
+<?php if($message): ?>
+    <p style="color:green; font-weight:bold;"><?= $message ?></p>
+<?php endif; ?>
+
 <form method="post">
-    Username: <input type="text" name="username" value="<?= htmlspecialchars($edit_user['username']) ?>"> <?= $errors['username'] ?? '' ?><br>
-    Password: <input type="password" name="password"> <?= $errors['password'] ?? '' ?><br>
-    Role: 
-    <select name="role">
-        <option value="user" <?= $edit_user['role']=='user'?'selected':'' ?>>User</option>
-        <option value="admin" <?= $edit_user['role']=='admin'?'selected':'' ?>>Admin</option>
-    </select> <?= $errors['role'] ?? '' ?><br>
+
+    <div class="form-group">
+        <label>Username:</label>
+        <input type="text" name="username" value="<?= htmlspecialchars($username) ?>">
+        <span class="error"><?= $errors['username'] ?? '' ?></span>
+    </div>
+
+    <div class="form-group">
+        <label>Email:</label>
+        <input type="email" name="email" value="<?= htmlspecialchars($email) ?>">
+        <span class="error"><?= $errors['email'] ?? '' ?></span>
+    </div>
+
+    <div class="form-group">
+        <label>Password: <small>(leave blank to keep current)</small></label>
+        <input type="password" name="password">
+        <span class="error"><?= $errors['password'] ?? '' ?></span>
+    </div>
+
+    <div class="form-group">
+        <label>Role:</label>
+        <select name="role">
+            <option value="user" <?= $role=='user'?'selected':'' ?>>User</option>
+            <option value="admin" <?= $role=='admin'?'selected':'' ?>>Admin</option>
+        </select>
+        <span class="error"><?= $errors['role'] ?? '' ?></span>
+    </div>
+
     <button type="submit">Update User</button>
 </form>
+
 <p><a href="list_users.php">Back to Users List</a></p>
+</div>
+
 </body>
 </html>

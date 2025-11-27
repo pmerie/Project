@@ -5,39 +5,42 @@ require 'db_connect.php';
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim($_POST['username']);
-    $password = trim($_POST['password']);
+    $username = trim($_POST['username'] ?? '');
+    $password = trim($_POST['password'] ?? '');
 
-    try {
-        // Fetch user by username
-        $stmt = $db->prepare("SELECT user_id, username, password_hash, role FROM users WHERE username = ?");
-        $stmt->execute([$username]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($username === '' || $password === '') {
+        $message = "Please enter both username and password.";
+    } else {
+        try {
+            // Fetch user by username
+            $stmt = $db->prepare("SELECT user_id, username, password_hash, role FROM users WHERE username = ?");
+            $stmt->execute([$username]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // Verify password
-        if ($user && password_verify($password, $user['password_hash'])) {
+            // Verify password using password_verify()
+            if ($user && password_verify($password, $user['password_hash'])) {
 
-            // Set session variables
-            $_SESSION['user_id'] = $user['user_id'];
-            $_SESSION['username'] = $user['username'];
-            $_SESSION['role'] = $user['role'];
+                // Set session variables
+                $_SESSION['user_id'] = $user['user_id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['role'] = $user['role'];
 
-            // Redirect based on role
-            if ($user['role'] === 'admin') {
-                header('Location: admin.php');
+                // Redirect based on role
+                if ($user['role'] === 'admin') {
+                    header('Location: admin.php');
+                } else {
+                    header('Location: index.php');
+                }
+                exit;
+
             } else {
-                header('Location: index.php'); // Non-admin users go to public area
+                $message = "Invalid username or password.";
             }
-            exit;
 
-        } else {
-            $message = "Invalid username or password.";
+        } catch (PDOException $e) {
+            error_log("DB Error: " . $e->getMessage());
+            $message = "An error occurred. Please try again later.";
         }
-
-    } catch (PDOException $e) {
-        // Log actual error for debugging (don't show sensitive info to user)
-        error_log("DB Error: " . $e->getMessage());
-        $message = "An error occurred. Please try again later.";
     }
 }
 ?>

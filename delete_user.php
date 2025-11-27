@@ -22,3 +22,4 @@ $stmt->execute([$del_id]);
 
 header('Location: list_users.php');
 exit;
+

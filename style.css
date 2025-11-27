@@ -273,3 +273,44 @@ body.login-page {
     margin: 0;
 }
 
+/* ================================
+   ADMIN FORM ALIGNMENT
+================================ */
+.admin-form {
+    max-width: 500px;
+}
+
+.admin-form .form-group {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.admin-form .form-group label {
+    width: 120px;
+    font-weight: bold;
+    padding-top: 5px;
+}
+
+.admin-form .form-group input,
+.admin-form .form-group select,
+.admin-form .form-group textarea {
+    flex: 1;
+    padding: 6px 10px;
+    font-size: 14px;
+}
+
+.admin-form .error {
+    color: red;
+    font-size: 0.85em;
+    margin-top: 4px;
+    margin-left: 120px; /* align with input */
+}
+
+.admin-form button {
+    padding: 8px 16px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+

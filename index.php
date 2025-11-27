@@ -10,40 +10,9 @@ $stmt = $db->query("
     ORDER BY characters.created_at DESC
 ");
 $characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Fetch all categories for the dropdown
-$stmt = $db->query("SELECT * FROM categories ORDER BY category_name ASC");
-$categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <main>
-
-    <!-- Categories Dropdown -->
-    <?php if (!empty($categories)): ?>
-        <form id="categoryForm" style="margin-bottom: 20px;">
-            <label for="categorySelect"><strong>Browse by Category:</strong></label>
-            <select id="categorySelect" name="category">
-                <option value="">-- Choose a category --</option>
-                <?php foreach ($categories as $cat): ?>
-                    <option value="category_view.php?id=<?= $cat['category_id'] ?>">
-                        <?= htmlspecialchars($cat['category_name']) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-            <button type="submit">Go</button>
-        </form>
-
-        <script>
-            const form = document.getElementById('categoryForm');
-            const select = document.getElementById('categorySelect');
-
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const url = select.value;
-                if (url) window.location.href = url;
-            });
-        </script>
-    <?php endif; ?>
 
     <!-- Characters List -->
     <?php if (empty($characters)): ?>
@@ -58,7 +27,6 @@ $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 } elseif (!empty($char['image_url'])) {
                     $imgSrc = htmlspecialchars($char['image_url']);
                 }
-
                 ?>
                 <?php if ($imgSrc !== ''): ?>
                     <img src="<?= $imgSrc ?>" alt="<?= htmlspecialchars($char['name']) ?>" width="200">
