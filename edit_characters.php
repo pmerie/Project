@@ -3,7 +3,6 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-//Session and check login
 session_start();
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
@@ -12,33 +11,27 @@ if (!isset($_SESSION['user_id'])) {
 
 require 'db_connect.php';
 
-// Check if user is logged in and admin
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
-}
-
+// Check if user is admin
 $stmt = $db->prepare("SELECT role FROM users WHERE user_id = ?");
 $stmt->execute([$_SESSION['user_id']]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
 if (!$user || $user['role'] !== 'admin') {
     die("❌ Access denied. Admins only.");
 }
 
-// Fetch all categories
+// Fetch categories
 $categoryStmt = $db->query("SELECT * FROM categories ORDER BY category_name");
 $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $current_user_id = $_SESSION['user_id'];
 
-// Check if character ID is provided
+// Validate character ID
 if (!isset($_GET['id']) || !ctype_digit($_GET['id'])) {
     die("❌ Invalid character ID.");
 }
 $char_id = (int) $_GET['id'];
 
-// Fetch the character with film name
+// Fetch character with film name
 $stmt = $db->prepare("
     SELECT c.*, f.film_name 
     FROM characters c
@@ -47,7 +40,6 @@ $stmt = $db->prepare("
 ");
 $stmt->execute([$char_id]);
 $char = $stmt->fetch(PDO::FETCH_ASSOC);
-
 if (!$char) {
     die("Character not found.");
 }
@@ -80,43 +72,113 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($description === '') $fieldErrors['description'] = "Description is required.";
     elseif (strlen($description) > 1000) $fieldErrors['description'] = "Description cannot exceed 1000 characters.";
 
-    // ---------- IMAGE UPLOAD HANDLING ----------
-    $uploadedImage = $char['uploaded_image'] ?? null; // keep current uploaded image by default
+    // Validation Image Url
+    // if ($image_url === '') {
+    //     $fieldErrors['image_url'] = "Image URL is required.";
+    // }
+    // elseif (!filter_var($image_url, FILTER_VALIDATE_URL)) {
+    //     $fieldErrors['image_url'] = "Invalid URL format.";
+    // }
 
-    if (isset($_FILES['image_file']) && $_FILES['image_file']['error'] === UPLOAD_ERR_OK) {
-        $fileTmpPath = $_FILES['image_file']['tmp_name'];
-        $fileName = basename($_FILES['image_file']['name']);
+// ---------- IMAGE UPLOAD HANDLING ----------
+$uploadedImage = $char['uploaded_image'] ?? null;
 
-        $imageInfo = getimagesize($fileTmpPath);
-        if ($imageInfo === false) {
-            $fieldErrors['image_file'] = "❌ File is not a real image.";
+if (isset($_FILES['image_file']) && $_FILES['image_file']['error'] === UPLOAD_ERR_OK) {
+    $fileTmpPath = $_FILES['image_file']['tmp_name'];
+    $originalFileName = basename($_FILES['image_file']['name']);
+    $uploadsDir = __DIR__ . '/uploads/';
+
+    if (!is_dir($uploadsDir)) mkdir($uploadsDir, 0755, true);
+
+    // Ensure unique file name
+    $fileExt = pathinfo($originalFileName, PATHINFO_EXTENSION);
+    $baseName = pathinfo($originalFileName, PATHINFO_FILENAME);
+    $counter = 1;
+    $fileName = $originalFileName;
+    while (file_exists($uploadsDir . $fileName)) {
+        $fileName = $baseName . '_' . $counter . '.' . $fileExt;
+        $counter++;
+    }
+
+    $imageInfo = getimagesize($fileTmpPath);
+    if ($imageInfo === false) {
+        $fieldErrors['image_file'] = "❌ File is not a real image.";
+    } else {
+        $mimeType = $imageInfo['mime'];
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+
+        if (!in_array($mimeType, $allowedTypes)) {
+            $fieldErrors['image_file'] = "❌ Only JPG, PNG, and GIF images are allowed.";
         } else {
-            $mimeType = $imageInfo['mime'];
-            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+            // RESIZE IMAGE 
+            $maxWidth = 400;
+            $maxHeight = 400;
 
-            if (!in_array($mimeType, $allowedTypes)) {
-                $fieldErrors['image_file'] = "❌ Only JPG, PNG, and GIF images are allowed.";
-            } else {
-                $uploadsDir = __DIR__ . '/uploads/';
-                if (!is_dir($uploadsDir)) mkdir($uploadsDir, 0777, true);
+            $origWidth = $imageInfo[0];
+            $origHeight = $imageInfo[1];
+            $type = $imageInfo[2];
+
+           
+            $ratio = min($maxWidth / $origWidth, $maxHeight / $origHeight, 1);
+            $newWidth = (int)($origWidth * $ratio);
+            $newHeight = (int)($origHeight * $ratio);
+
+            $resizedImage = imagecreatetruecolor($newWidth, $newHeight);
+
+            switch ($type) {
+                case IMAGETYPE_JPEG:
+                    $source = imagecreatefromjpeg($fileTmpPath);
+                    break;
+                case IMAGETYPE_PNG:
+                    $source = imagecreatefrompng($fileTmpPath);
+                    break;
+                case IMAGETYPE_GIF:
+                    $source = imagecreatefromgif($fileTmpPath);
+                    break;
+                default:
+                    $fieldErrors['image_file'] = "❌ Unsupported image type.";
+                    $source = null;
+            }
+
+            if ($source) {
+                imagecopyresampled($resizedImage, $source, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight);
 
                 $newFilePath = $uploadsDir . $fileName;
 
-                if (move_uploaded_file($fileTmpPath, $newFilePath)) {
-                    $uploadedImage = $fileName; // save new uploaded image
-                } else {
-                    $fieldErrors['image_file'] = "❌ Error moving uploaded file.";
+                switch ($type) {
+                    case IMAGETYPE_JPEG:
+                        imagejpeg($resizedImage, $newFilePath, 90);
+                        break;
+                    case IMAGETYPE_PNG:
+                        imagepng($resizedImage, $newFilePath);
+                        break;
+                    case IMAGETYPE_GIF:
+                        imagegif($resizedImage, $newFilePath);
+                        break;
                 }
+
+                imagedestroy($resizedImage);
+                imagedestroy($source);
+
+                $uploadedImage = $fileName;
             }
         }
     }
+}
 
-    // ---------- REMOVE UPLOADED IMAGE IF CHECKED ----------
+
+
+
+    // REMOVE UPLOADED IMAGE IF CHECKED 
     if (isset($_POST['remove_uploaded_image']) && $_POST['remove_uploaded_image'] == '1') {
+        if (!empty($char['uploaded_image'])) {
+            $filePath = __DIR__ . '/uploads/' . $char['uploaded_image'];
+            if (file_exists($filePath)) unlink($filePath);
+        }
         $uploadedImage = null;
     }
 
-    // ---------- DATABASE UPDATE ----------
+    // DATABASE UPDATE
     if (empty($fieldErrors)) {
         $stmt = $db->prepare("SELECT film_id FROM films WHERE film_name = ? LIMIT 1");
         $stmt->execute([$film_name]);
@@ -191,10 +253,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="error"><?= $fieldErrors['description'] ?? '' ?></div>
     <br>
 
-    <label>Image URL (Homepage image):</label><br>
+    <!-- <label>Image URL (Homepage image):</label><br>
     <input type="text" name="image_url" value="<?= htmlspecialchars($char['image_url'] ?? '') ?>">
-    <div class="error"><?= $fieldErrors['image_url'] ?? '' ?></div>
-    <br>
+    <div class="error"><?//= $fieldErrors['image_url'] ?? '' ?></div>
+    <br> -->
 
     <label>Upload Image (Character page):</label><br>
     <input type="file" name="image_file" accept="image/*">
@@ -202,11 +264,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px; margin-bottom: 10px;">
             <span style="white-space: nowrap;">Current uploaded image: <?= htmlspecialchars($char['uploaded_image']) ?></span>
             <label class="checkbox-inline">
-                <input type="checkbox" name="remove_uploaded_image" value="1"> Remove uploaded image
-            </label>
+                <input type="checkbox" name="remove_uploaded_image" value="1"> Delete Image
+            </label><br>
         </div>
-        <?php endif; ?>
-
+    <?php endif; ?>
     <div class="error"><?= $fieldErrors['image_file'] ?? '' ?></div>
     <br>
 

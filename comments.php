@@ -32,7 +32,6 @@ if (isset($_GET['hide'])) {
     exit;
 }
 
-// Unhide comment (set visible = 1) 
 if (isset($_GET['unhide'])) {
     $stmt = $db->prepare("UPDATE comments SET is_visible = 1 WHERE comment_id = ?");
     $stmt->execute([$_GET['unhide']]);

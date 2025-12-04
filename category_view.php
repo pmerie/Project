@@ -53,7 +53,6 @@ $characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </ul>
 <?php endif; ?>
 
-<!-- <p><a href="browse_categories.php">Back to Categories</a></p> -->
 <p><a href="index.php">← Back to Home</a></p>
 
 </body>

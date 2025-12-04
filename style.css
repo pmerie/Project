@@ -1,21 +1,17 @@
-/* ================================
-   GLOBAL STYLES
-================================ */
+/* GLOBAL STYLES */
 body {
     font-family: Arial, sans-serif;
-    background-color: #D0E7D2; /* light pastel green */
+    background-color: #D0E7D2; 
     margin: 0;
     padding: 20px;
     color: #333;
 }
 
 h1, h2, h3 {
-    color: #618264; /* dark green */
+    color: #618264; 
 }
 
-/* ================================
-   LINKS
-================================ */
+/* LINKS */
 a {
     color: #618264;
     text-decoration: none;
@@ -26,12 +22,10 @@ a:hover {
     text-decoration: underline;
 }
 
-/* ================================
-   BUTTONS
-================================ */
+/* BUTTONS */
 button,
 input[type="submit"] {
-    background-color: #79AC78; /* medium green */
+    background-color: #79AC78; 
     color: white;
     border: none;
     padding: 10px 18px;
@@ -42,12 +36,10 @@ input[type="submit"] {
 
 button:hover,
 input[type="submit"]:hover {
-    background-color: #618264; /* dark green */
+    background-color: #618264; 
 }
 
-/* ================================
-   FORMS
-================================ */
+/* FORMS */
 input[type="text"],
 input[type="email"],
 input[type="password"],
@@ -65,9 +57,7 @@ textarea {
     width: 100%;
 }
 
-/* ================================
-   TABLES
-================================ */
+/* TABLES */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -75,7 +65,7 @@ table {
 }
 
 th {
-    background-color: #79AC78; /* medium green */
+    background-color: #79AC78; 
     color: white;
     padding: 10px;
 }
@@ -94,11 +84,9 @@ th a:hover {
     color: #D0E7D2 !important;
 }
 
-/* ================================
-   HEADER
-================================ */
+/* HEADER */
 header {
-    background-color: #79AC78; /* medium green */
+    background-color: #79AC78; 
     padding: 20px;
     margin-bottom: 20px;
     border-radius: 10px;
@@ -109,11 +97,9 @@ header h1 a {
     text-decoration: none;
 }
 
-/* ================================
-   NAVIGATION BAR
-================================ */
+/* NAVIGATION BAR */
 nav {
-    background-color: #79AC78; /* medium green */
+    background-color: #79AC78; 
     padding: 12px 20px;
     border-radius: 10px;
     margin-bottom: 20px;
@@ -123,8 +109,8 @@ nav {
 }
 
 nav a {
-    background-color: #B0D9B1; /* soft pastel green */
-    color: #618264;           /* dark green text */
+    background-color: #B0D9B1; 
+    color: #618264;           
     padding: 8px 14px;
     border-radius: 6px;
     text-decoration: none;
@@ -133,7 +119,7 @@ nav a {
 }
 
 nav a:hover {
-    background-color: #D0E7D2; /* light pastel green */
+    background-color: #D0E7D2; 
 }
 
 nav a.active {
@@ -154,9 +140,7 @@ nav button:hover {
     background-color: #4e6a54;
 }
 
-/* ================================
-   LISTS
-================================ */
+/* LISTS */
 ul {
     background: #ffffff;
     padding: 15px;
@@ -168,9 +152,7 @@ li {
     padding: 8px 0;
 }
 
-/* ================================
-   CONTAINERS / BOXES
-================================ */
+/* CONTAINERS / BOXES */
 .container {
     background: #ffffff;
     padding: 20px;
@@ -179,9 +161,7 @@ li {
     margin-bottom: 20px;
 }
 
-/* ================================
-   LOGIN PAGE STYLES
-================================ */
+/* LOGIN PAGE STYLES */
 body.login-page {
     display: flex;
     justify-content: center;
@@ -219,12 +199,10 @@ body.login-page {
     background: #ffffff;
 }
 
-/* ================================
-   ADMIN / EDIT PAGE BOX
-================================ */
+/* ADMIN / EDIT PAGE BOX */
 .page-box {
-    background-color: #D0E7D2;   /* very light pastel green */
-    border: 2px solid #79AC78;   /* medium green border */
+    background-color: #D0E7D2;   
+    border: 2px solid #79AC78;   
     border-radius: 14px;
     padding: 25px;
     max-width: 700px;
@@ -258,9 +236,7 @@ body.login-page {
     width: 25%;
 }
 
-/* ================================
-   Check Box
-================================ */
+/* Check Box */
 .checkbox-inline {
     display: inline-flex;
     align-items: center;
@@ -273,9 +249,7 @@ body.login-page {
     margin: 0;
 }
 
-/* ================================
-   ADMIN FORM ALIGNMENT
-================================ */
+/* ADMIN FORM ALIGNMENT */
 .admin-form {
     max-width: 500px;
 }
@@ -312,5 +286,92 @@ body.login-page {
     font-size: 14px;
     cursor: pointer;
 }
+
+/* CHARACTER CARDS – SEARCH RESULTS */
+.character-card {
+    background: #ffffff;
+    border: 2px solid #79AC78; /* green border */
+    border-radius: 12px;
+    padding: 15px;
+    margin: 20px 0;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+}
+
+.character-card img {
+    width: 150px;
+    height: auto;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.character-card h2 {
+    margin: 0 0 8px 0;
+    color: #618264;
+}
+
+.character-card p {
+    margin: 5px 0;
+}
+
+.character-card a {
+    display: inline-block;
+    margin-top: 10px;
+    background-color: #79AC78;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.character-card a:hover {
+    background-color: #618264;
+}
+/* PAGINATION STYLING */
+
+.pagination {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.pagination a,
+.pagination strong {
+    display: inline-block;
+    padding: 8px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: bold;
+    min-width: 32px;
+    text-align: center;
+}
+
+.pagination a {
+    background-color: #B0D9B1; /* soft pastel green */
+    color: #618264;
+    border: 1px solid #79AC78;
+    transition: 0.2s;
+}
+
+.pagination a:hover {
+    background-color: #79AC78;
+    color: white;
+}
+
+.pagination strong {
+    background-color: #618264; /* dark green for active page */
+    color: white;
+    border: 1px solid #618264;
+}
+
+
+
+
+
+
+
+
 
 

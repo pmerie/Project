@@ -6,13 +6,13 @@ error_reporting(E_ALL);
 session_start();
 require 'db_connect.php';
 
-// ------------------- GET CHARACTER ID -------------------
+// GET CHARACTER ID 
 if (!isset($_GET['id']) || !ctype_digit($_GET['id'])) {
     die("❌ Invalid character ID.");
 }
 $char_id = (int) $_GET['id']; // safe to use in SQL
 
-// ------------------- FETCH CHARACTER DETAILS -------------------
+//  FETCH CHARACTER DETAILS 
 $stmt = $db->prepare("
     SELECT c.*, f.film_name
     FROM characters c
@@ -26,7 +26,7 @@ if (!$character) {
     die("Character not found.");
 }
 
-// ------------------- HANDLE COMMENT SUBMISSION -------------------
+// HANDLE COMMENT SUBMISSION 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $comment_text = trim($_POST['comment_text']);
     $user_name = isset($_SESSION['username']) ? $_SESSION['username'] : trim($_POST['user_name'] ?? '');
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// ------------------- FETCH VISIBLE COMMENTS -------------------
+// FETCH VISIBLE COMMENTS 
 $stmt = $db->prepare("
     SELECT * FROM comments
     WHERE character_id = ? AND is_visible = 1

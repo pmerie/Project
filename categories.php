@@ -2,7 +2,6 @@
 session_start();
 require 'db_connect.php';
 
-// ------------------- AUTH CHECK -------------------
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;

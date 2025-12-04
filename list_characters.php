@@ -20,14 +20,14 @@ if (!$user || $user['role'] !== 'admin') {
 $sort = $_GET['sort'] ?? 'name';
 $order = $_GET['order'] ?? 'ASC';
 
-// Only allow safe options
+
 $allowedSort = ['name', 'film_name', 'created_at'];
 $allowedOrder = ['ASC', 'DESC'];
 
 if (!in_array($sort, $allowedSort)) $sort = 'name';
 if (!in_array($order, $allowedOrder)) $order = 'ASC';
 
-// Query with sorting
+
 $stmt = $db->prepare("
     SELECT characters.*, films.film_name 
     FROM characters 

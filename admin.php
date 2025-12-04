@@ -3,7 +3,6 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-//Session and check login
 session_start();
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
@@ -12,12 +11,7 @@ if (!isset($_SESSION['user_id'])) {
 
 require 'db_connect.php';
 
-// Only allow logged-in admins
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
-}
-
+// Check if user is admin
 $stmt = $db->prepare("SELECT role FROM users WHERE user_id = ?");
 $stmt->execute([$_SESSION['user_id']]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -25,6 +19,7 @@ if (!$user || $user['role'] !== 'admin') {
     die("❌ Access denied. Admins only.");
 }
 
+// Fetch categories
 $categoryStmt = $db->query("SELECT * FROM categories ORDER BY category_name");
 $categories = $categoryStmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -40,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $image_url = trim($_POST['image_url'] ?? '');
     $category_id = $_POST['category_id'] ?? '';
 
-    // ---------- FIELD VALIDATIONS ----------
+    // FIELD VALIDATIONS 
     if ($name === '') $fieldErrors['name'] = "Name is required.";
     elseif (strlen($name) > 255) $fieldErrors['name'] = "Name cannot exceed 255 characters.";
 
@@ -53,57 +48,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($description === '') $fieldErrors['description'] = "Description is required.";
     elseif (strlen($description) > 1000) $fieldErrors['description'] = "Description cannot exceed 1000 characters.";
 
-    // if ($image_url !== '' && !filter_var($image_url, FILTER_VALIDATE_URL)) {
-    //     $fieldErrors['image_url'] = "Invalid Image URL.";
-    // }
+    // Validate Image URL if provided
+    if ($image_url && !filter_var($image_url, FILTER_VALIDATE_URL)) {
+        $fieldErrors['image_url'] = "Invalid URL format.";
+    }
 
-// ---------- IMAGE UPLOAD HANDLING ----------
-$uploadedImage = null; // default if no upload
+    // IMAGE UPLOAD HANDLING 
+    $uploadedImage = null;
 
-// Make sure a file was uploaded
-if (isset($_FILES['image_file']) && $_FILES['image_file']['error'] === UPLOAD_ERR_OK) {
+    if (isset($_FILES['image_file']) && $_FILES['image_file']['error'] === UPLOAD_ERR_OK) {
+        $fileTmpPath = $_FILES['image_file']['tmp_name'];
+        $originalFileName = basename($_FILES['image_file']['name']);
+        $fileExt = strtolower(pathinfo($originalFileName, PATHINFO_EXTENSION));
 
-    $fileTmpPath = $_FILES['image_file']['tmp_name'];
-    $fileName = basename($_FILES['image_file']['name']);
-
-    // STEP 5 — Real image-ness test
-    $imageInfo = getimagesize($fileTmpPath);
-
-    if ($imageInfo === false) {
-        $fieldErrors['image_file'] = "❌ File is not a real image.";
-    } else {
-
-        $mimeType = $imageInfo['mime'];
-        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-
-        if (!in_array($mimeType, $allowedTypes)) {
+        $allowedTypes = ['jpg', 'jpeg', 'png', 'gif'];
+        if (!in_array($fileExt, $allowedTypes)) {
             $fieldErrors['image_file'] = "❌ Only JPG, PNG, and GIF images are allowed.";
         } else {
-
-            // Ensure uploads directory exists
             $uploadsDir = __DIR__ . '/uploads/';
-            if (!is_dir($uploadsDir)) {
-                mkdir($uploadsDir, 0777, true);
+            if (!is_dir($uploadsDir)) mkdir($uploadsDir, 0777, true);
+
+            $newFilePath = $uploadsDir . $originalFileName;
+
+            $imageInfo = getimagesize($fileTmpPath);
+            list($origWidth, $origHeight) = $imageInfo;
+            $maxWidth = 400;
+            $maxHeight = 400;
+            $ratio = min($maxWidth / $origWidth, $maxHeight / $origHeight, 1);
+            $newWidth = (int)($origWidth * $ratio);
+            $newHeight = (int)($origHeight * $ratio);
+
+            switch ($imageInfo['mime']) {
+                case 'image/jpeg': $srcImage = imagecreatefromjpeg($fileTmpPath); break;
+                case 'image/png': $srcImage = imagecreatefrompng($fileTmpPath); break;
+                case 'image/gif': $srcImage = imagecreatefromgif($fileTmpPath); break;
+                default: $srcImage = null; $fieldErrors['image_file'] = "❌ Unsupported image type.";
             }
 
-            $newFilePath = $uploadsDir . $fileName;
+            if ($srcImage) {
+                $dstImage = imagecreatetruecolor($newWidth, $newHeight);
+                if ($imageInfo['mime'] === 'image/png' || $imageInfo['mime'] === 'image/gif') {
+                    imagecolortransparent($dstImage, imagecolorallocatealpha($dstImage, 0,0,0,127));
+                    imagealphablending($dstImage,false);
+                    imagesavealpha($dstImage,true);
+                }
+                imagecopyresampled($dstImage, $srcImage,0,0,0,0,$newWidth,$newHeight,$origWidth,$origHeight);
 
-            if (move_uploaded_file($fileTmpPath, $newFilePath)) {
-                $uploadedImage = $fileName; // store filename for DB
-            } else {
-                $fieldErrors['image_file'] = "❌ Error moving uploaded file.";
+                switch ($imageInfo['mime']) {
+                    case 'image/jpeg': imagejpeg($dstImage, $newFilePath, 85); break;
+                    case 'image/png': imagepng($dstImage, $newFilePath); break;
+                    case 'image/gif': imagegif($dstImage, $newFilePath); break;
+                }
+
+                imagedestroy($srcImage);
+                imagedestroy($dstImage);
+                $uploadedImage = 'uploads/' . $originalFileName; 
             }
         }
     }
 
-} else {
-    // No file uploaded — this is OK (optional)
-    $uploadedImage = null;
-}
-
-
-
-    // ---------- DATABASE INSERT ----------
+    //  DATABASE INSERT 
     if (empty($fieldErrors)) {
         // Check if film exists
         $stmt = $db->prepare("SELECT film_id FROM films WHERE film_name = ? LIMIT 1");
@@ -117,7 +121,9 @@ if (isset($_FILES['image_file']) && $_FILES['image_file']['error'] === UPLOAD_ER
             $film_id = $db->lastInsertId();
         }
 
-        // Insert character
+        // Determine final image
+        $finalImage = $uploadedImage ?? $image_url ?? null;
+
         $stmt = $db->prepare("
             INSERT INTO characters (name, film_id, character_type, description, image_url, category_id)
             VALUES (?, ?, ?, ?, ?, ?)
@@ -127,7 +133,7 @@ if (isset($_FILES['image_file']) && $_FILES['image_file']['error'] === UPLOAD_ER
             $film_id,
             $character_type ?: '',
             $description,
-            $uploadedImage ?: $image_url, // use uploaded image if exists, else URL input
+            $finalImage,
             $category_id
         ]);
 
@@ -152,12 +158,13 @@ if (isset($_FILES['image_file']) && $_FILES['image_file']['error'] === UPLOAD_ER
 <div class="page-box">
 <h1>Admin - Add New Character</h1>
 
+
 <p>
     <a href="list_characters.php">View All Characters</a> |
     <a href="list_users.php">Manage Users</a> |
+    <a href="index.php">Home</a> |
     <a href="categories.php">Manage Categories</a> |
-    <a href="comments.php">Moderate Comments</a> |
-    <a href="index.php">Home</a>
+    <a href="comments.php">Moderate Comments</a> 
     
 </p>
 
@@ -218,7 +225,6 @@ if (isset($_FILES['image_file']) && $_FILES['image_file']['error'] === UPLOAD_ER
 </div>
 
 <script>
-// Remove error message when user starts typing/changing that field
 document.addEventListener('DOMContentLoaded', () => {
     const fields = ['name','film_name','character_type','description','image_url','category_id'];
     fields.forEach(fieldName => {

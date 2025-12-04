@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ghibli World Archive</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=1">
 </head>
 <body>
     <header>
@@ -12,6 +12,7 @@
 
         <!-- Navigation links -->
         <nav>
+            <div class="nav-right">
             <a href="browse_characters.php">Browse Characters</a> |
             <a href="browse_categories.php">Browse by Category</a> |
             <?php if (!isset($_SESSION['user_id'])): ?>
@@ -22,10 +23,11 @@
                     <button type="submit">Logout</button>
                 </form>
             <?php endif; ?>
+            </div>
         </nav>
 
         <?php
-        // Fetch categories for the dropdown
+     
         require_once 'db_connect.php';
         $catStmt = $db->query("SELECT category_id, category_name FROM categories ORDER BY category_name");
         $categories = $catStmt->fetchAll(PDO::FETCH_ASSOC);

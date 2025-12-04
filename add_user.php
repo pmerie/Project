@@ -42,14 +42,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->execute([$username]);
     if ($stmt->fetch()) $errors['username'] = "Username already exists.";
 
-    // Only insert if no errors
     if (empty($errors)) {
         $password_hash = password_hash($password, PASSWORD_DEFAULT);
         $stmt = $db->prepare("INSERT INTO users (username, email, password_hash, role) VALUES (?, ?, ?, ?)");
         $stmt->execute([$username, $email, $password_hash, $role]);
 
         $message = "✅ User added successfully!";
-        // Clear form after successful submission
+
         $username = $email = $password = $role = '';
     }
 }
