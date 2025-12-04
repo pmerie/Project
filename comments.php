@@ -24,7 +24,7 @@ if (isset($_GET['delete'])) {
     exit;
 }
 
-//  Hide comment (set visible = 0) 
+//  Hide comment 
 if (isset($_GET['hide'])) {
     $stmt = $db->prepare("UPDATE comments SET is_visible = 0 WHERE comment_id = ?");
     $stmt->execute([$_GET['hide']]);

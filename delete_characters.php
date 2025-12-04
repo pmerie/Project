@@ -60,7 +60,6 @@ try {
     exit;
 
 } catch (PDOException $e) {
-    // Roll back if in transaction
     if ($db->inTransaction()) {
         $db->rollBack();
     }

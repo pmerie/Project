@@ -45,7 +45,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!in_array($role, ['admin','user'])) $errors['role'] = "Invalid role.";
 
-    // Check if username exists for another user
     $stmt = $db->prepare("SELECT user_id FROM users WHERE username = ? AND user_id != ?");
     $stmt->execute([$username, $edit_id]);
     if ($stmt->fetch()) $errors['username'] = "Username already exists.";

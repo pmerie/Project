@@ -80,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     //     $fieldErrors['image_url'] = "Invalid URL format.";
     // }
 
-// ---------- IMAGE UPLOAD HANDLING ----------
+//  IMAGE UPLOAD HANDLING 
 $uploadedImage = $char['uploaded_image'] ?? null;
 
 if (isset($_FILES['image_file']) && $_FILES['image_file']['error'] === UPLOAD_ERR_OK) {

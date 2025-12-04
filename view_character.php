@@ -10,7 +10,7 @@ require 'db_connect.php';
 if (!isset($_GET['id']) || !ctype_digit($_GET['id'])) {
     die("❌ Invalid character ID.");
 }
-$char_id = (int) $_GET['id']; // safe to use in SQL
+$char_id = (int) $_GET['id']; 
 
 //  FETCH CHARACTER DETAILS 
 $stmt = $db->prepare("

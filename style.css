@@ -290,7 +290,7 @@ body.login-page {
 /* CHARACTER CARDS – SEARCH RESULTS */
 .character-card {
     background: #ffffff;
-    border: 2px solid #79AC78; /* green border */
+    border: 2px solid #79AC78; 
     border-radius: 12px;
     padding: 15px;
     margin: 20px 0;
@@ -349,7 +349,7 @@ body.login-page {
 }
 
 .pagination a {
-    background-color: #B0D9B1; /* soft pastel green */
+    background-color: #B0D9B1; 
     color: #618264;
     border: 1px solid #79AC78;
     transition: 0.2s;
@@ -361,7 +361,7 @@ body.login-page {
 }
 
 .pagination strong {
-    background-color: #618264; /* dark green for active page */
+    background-color: #618264; 
     color: white;
     border: 1px solid #618264;
 }
